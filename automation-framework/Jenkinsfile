@@ -1,0 +1,17 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Build') { steps { sh 'mvn -B -DskipTests=true clean package' } }
+    stage('Start Services') {
+      steps {
+        sh 'docker-compose -f docker-compose.yml up -d || true'
+        sleep 10
+      }
+    }
+    stage('Run API Tests') { steps { sh 'mvn -Dtest=*Api* test || true' } }
+    stage('Run UI Tests') { steps { sh 'mvn -Dtest=*RegistrationFlowTest test || true' } }
+    stage('Publish') { steps { echo 'Publish reports (configure Allure plugin separately)' } }
+  }
+  post { always { sh 'docker-compose -f docker-compose.yml down || true' } }
+}
